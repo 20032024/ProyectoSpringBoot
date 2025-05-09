@@ -24,11 +24,12 @@ jobs:
       # Paso 3: Construir la imagen Docker con las variables de entorno desde los secrets
       - name: Build Docker image
         run: |
-          docker build --build-arg SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
-                       --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
-                       --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
-                       --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-                       -t anderluuna/springboot-app:latest .
+         docker buildx build --build-arg SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
+                    --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
+                    --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                    --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+                    -t anderluuna/springboot-app:latest .
+
 
       # Paso 4: Subir la imagen a Docker Hub
       - name: Push Docker image
