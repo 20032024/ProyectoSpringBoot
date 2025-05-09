@@ -1,37 +1,38 @@
-name: Build and Push Docker Image
+name: Deploy-postgresql-api
 
 on:
   push:
-    branches:
-      - master
+    branches: ["master"]
 
 jobs:
-  build:
+  deploy-api:
     runs-on: ubuntu-latest
-
     steps:
-      # Paso 1: Checkout del código fuente
-      - name: Checkout code
-        uses: actions/checkout@v2
 
-      # Paso 2: Login en Docker Hub
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USER }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      # Create .env file and inject DB connection info from secrets
+      - run: touch .env
+      - run: echo "DEV_DATABASE_URL=${{ secrets.PG_CONN }}" >> .env
+      - run: cat .env
 
-      # Paso 3: Construir la imagen Docker con las variables de entorno desde los secrets
-      - name: Build Docker image
-        run: |
-          docker build --build-arg SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
-                       --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
-                       --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
-                       --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-                       -t anderluuna/springboot-app:latest .
+      # Build the Docker image
+      - run: docker build --build-arg SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
+                          --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
+                          --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
+                          --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
+                          -t anderluuna/springboot-api:${{ github.sha }} .
+      
+      # Check if the image is built successfully
+      - run: docker images
 
+      # Docker login using GitHub Secrets for Docker Hub
+      - name: Docker login
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+        
+      # Push the built image to Docker Hub
+      - name: Docker push
+        run: docker push ${{ secrets.DOCKER_USER }}/springboot-api:${{ github.sha }}
 
-      # Paso 4: Subir la imagen a Docker Hub
-      - name: Push Docker image
-        run: docker push anderluuna/springboot-app:latest
 
