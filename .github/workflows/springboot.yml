@@ -8,37 +8,37 @@ jobs:
   deploy-api:
     runs-on: ubuntu-latest
     steps:
-
+      
       # Paso 1: Checkout del código
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Paso 2: Crear el archivo .env e inyectar la URL de la base de datos desde los secrets
-      - run: touch .env
-      - run: echo "DEV_DATABASE_URL=${{ secrets.DB_URL }}" >> .env
-      - run: echo "DEV_DATABASE_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-      - run: echo "DEV_DATABASE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-      - run: echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-      - run: cat .env
+      # Paso 2: Crear el archivo .env con las variables de entorno
+      - name: Create .env file with DB connection info
+        run: |
+          touch .env
+          echo "SPRING_DATASOURCE_URL=${{ secrets.DB_URL }}" >> .env
+          echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+          echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          cat .env
 
-      # Paso 3: Construir la imagen Docker con los valores de los secrets
-      - run: |
+      # Paso 3: Construir la imagen Docker usando el Dockerfile
+      - name: Build Docker image
+        run: |
           docker build --build-arg SPRING_DATASOURCE_URL=${{ secrets.DB_URL }} \
                        --build-arg SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }} \
                        --build-arg SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }} \
                        --build-arg JWT_SECRET=${{ secrets.JWT_SECRET }} \
-                       -t anderluuna/springboot-api:${{ github.sha }} .
+                       -f Dockerfile .  # Asegúrate de que la ruta al Dockerfile esté correcta
 
-      # Paso 4: Verificar si la imagen fue construida correctamente
-      - run: docker images
-
-      # Paso 5: Login en Docker Hub utilizando los secrets de Docker
+      # Paso 4: Iniciar sesión en Docker Hub
       - name: Docker login
         env:
           DOCKER_USER: ${{ secrets.DOCKER_USER }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
         
-      # Paso 6: Subir la imagen a Docker Hub
-      - name: Docker push
+      # Paso 5: Subir la imagen a Docker Hub
+      - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USER }}/springboot-api:${{ github.sha }}
