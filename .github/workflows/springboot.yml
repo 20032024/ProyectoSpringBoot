@@ -20,7 +20,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          
+
       # Paso 3: Construir la imagen Docker con las variables de entorno desde los secrets
       - name: Build Docker image
         run: |
@@ -33,3 +33,4 @@ jobs:
       # Paso 4: Subir la imagen a Docker Hub
       - name: Push Docker image
         run: docker push anderluuna/springboot-app:latest
+
